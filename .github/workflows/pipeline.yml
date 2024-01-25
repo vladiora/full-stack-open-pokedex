@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
 
 jobs:
   simple_deployment_pipeline:
@@ -34,6 +37,8 @@ jobs:
             wait-on: http://localhost:5000
 
         - name: Deploy
+          # only run when PR is merged
+          if: ${{ github.event_name == 'push' }}
           env:
             deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
           run: |
