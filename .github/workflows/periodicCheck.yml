@@ -1,8 +1,8 @@
 name: Periodic URL health check
 
 on:
-  schedule:
-    - cron: '0 12 * * *' # run daily at 12:00
+  #schedule:
+  #  - cron: '0 12 * * *' # run daily at 12:00
 
   # enable to be triggered manually
   workflow_dispatch:

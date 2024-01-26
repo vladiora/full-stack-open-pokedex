@@ -36,6 +36,16 @@ jobs:
             start: npm run start-prod
             wait-on: http://localhost:5000
 
+        - name: Build Failure
+          if: ${{ github.event_name == 'push' && failure() }}
+          uses: rjstone/discord-webhook-notify@v1
+          with:
+            severity: error
+            description: "commit ${{ github.event.head_commit.url }} by ${{ github.event.head_commit.author.username }} broke the build :/"
+            text: Build failed.
+            details: Test Failed!
+            webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+
   deployment:
     # only run when PR is merged
     if: ${{ github.event_name == 'push' }}
@@ -57,16 +67,6 @@ jobs:
           description: "to https://pokedex-t5zu.onrender.com/ by ${{ github.event.head_commit.author.username }}"
           text: A new version of Pokedex deployed.
           details: Test Succeeded!
-          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
-
-      - name: Build Failure
-        if: ${{ failure() }}
-        uses: rjstone/discord-webhook-notify@v1
-        with:
-          severity: error
-          description: "commit ${{ github.event.head_commit.url }} by ${{ github.event.head_commit.author.username }} broke the build :/"
-          text: Build failed.
-          details: Test Failed!
           webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
   tag_release:
