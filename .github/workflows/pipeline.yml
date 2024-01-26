@@ -36,22 +36,42 @@ jobs:
             start: npm run start-prod
             wait-on: http://localhost:5000
 
-        - name: Deploy
-          # only run when PR is merged
-          if: ${{ github.event_name == 'push' }}
-          env:
-            deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-          run: |
-            curl "$deploy_url"
+  deployment:
+    # only run when PR is merged
+    if: ${{ github.event_name == 'push' }}
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          curl "$deploy_url"
+
+      - name: Build Success
+        if: ${{ success() }}
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: info
+          description: "to https://pokedex-t5zu.onrender.com/ by ${{ github.event.head_commit.author.username }}"
+          text: A new version of Pokedex deployed.
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Build Failure
+        if: ${{ failure() }}
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          description: "commit ${{ github.event.head_commit.url }} by ${{ github.event.head_commit.author.username }} broke the build :/"
+          text: Build failed.
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
   tag_release:
     needs: [simple_deployment_pipeline]
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
       - name: Bump version and push tag
         if: ${{ github.event_name == 'push' && !contains(toJson(github.event.commits.*.message), '#skip') }}
         uses: anothrNick/github-tag-action@a2c70ae13a881faf2b4953baaa9e49731997ab36
